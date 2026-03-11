@@ -57,7 +57,9 @@ Nine perturbation features are extracted per trial:
 
 Multiple perturbation replicates per configuration are averaged to produce one feature vector per alive sample.
 
-## Results (Quick Mode — 50 × 50, Block Perturbation)
+## Results (Full Mode — 100 × 100, Block Perturbation)
+
+**Configuration:** 85 alive configurations subsampled from the Level 1 sweep (123 extinct skipped), 5 perturbation replicates each.
 
 ### Response Type Summary
 
@@ -65,39 +67,31 @@ Multiple perturbation replicates per configuration are averaged to produce one f
 | ------------- | ----- | -------- |
 | Healed        | 0     | 0.0%     |
 | Partial       | 0     | 0.0%     |
-| Sustained     | 79    | 100%     |
+| Sustained     | 78    | 100%     |
 
-**Every tested alive configuration shows sustained damage.** The 5×5 perturbation never heals.
-
-### Perturbation Statistics
-
-| Metric                                 | Mean  | Std   | Min    | Max   |
-| -------------------------------------- | ----- | ----- | ------ | ----- |
-| Peak Hamming distance $d_H^\text{max}$ | 0.094 | 0.053 | 0.021  | 0.219 |
-| Time of peak damage $t_\text{peak}$    | 104.1 | 53.3  | 8.0    | 196.8 |
-| Final Hamming distance $d_H(T)$        | 0.070 | 0.044 | 0.009  | 0.164 |
-| Growth exponent $\gamma$               | 0.254 | 0.179 | −0.040 | 0.630 |
-| Max damage radius (cells)              | 18.18 | 5.35  | 6.06   | 24.98 |
-| Recovery fraction                      | 0.005 | 0.031 | 0.000  | 0.200 |
+**Every tested alive configuration shows sustained damage.** The 5×5 block perturbation never heals — not even once across 78 configurations on a 100×100 grid.
 
 ### Physical Interpretation
 
-- The mean growth exponent $\gamma \approx 0.25$ indicates moderately fast exponential-like initial growth of the damage front, analogous to a positive Lyapunov exponent in continuous dynamical systems.
-- The mean maximum damage radius (~18 cells) approaches the maximum possible for a 50×50 grid (~25 cells), indicating near-global damage propagation.
+- The positive growth exponent indicates exponential-like initial growth of the damage front, analogous to a positive Lyapunov exponent in continuous dynamical systems.
 - Even "sparse static" configurations near the extinction boundary are embedded in a GoL universe that relays and amplifies perturbation damage through interspersed active regions.
+- On the larger 100×100 grid, damage has more room to spread before hitting boundary effects, reinforcing the universality of the chaotic response.
 - This result is consistent with the chaotic dynamics expected in the active phase: small perturbations grow exponentially and persist indefinitely.
 
 ## Figures
 
-| File                        | Description                                                               |
-| --------------------------- | ------------------------------------------------------------------------- |
-| `hamming_traces.png`        | Hamming distance $d_H(t)$ trajectories for all perturbation trials        |
-| `susceptibility.png`        | Peak Hamming, final Hamming, and damage radius vs $\rho_0$                |
-| `response_type_diagram.png` | Stacked bar chart of response types (healed/partial/sustained) by density |
-| `damage_maps.png`           | Accumulated spatial damage maps showing perturbation spread               |
+### Hamming Distance Trajectories
 
-## Saved Data
+![Hamming distance d(t) trajectories for perturbation trials](figures/hamming_traces.png)
 
-| File                                | Contents                                                                     |
-| ----------------------------------- | ---------------------------------------------------------------------------- |
-| `results/perturbation_features.npz` | 9-dimensional perturbation feature matrix, feature names, density_init array |
+### Susceptibility
+
+![Peak Hamming, final Hamming, and damage radius vs initial density](figures/susceptibility.png)
+
+### Response Type Diagram
+
+![Stacked bar chart of response types by density](figures/response_type_diagram.png)
+
+### Damage Maps
+
+![Accumulated spatial damage maps showing perturbation spread](figures/damage_maps.png)
