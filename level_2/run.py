@@ -66,6 +66,11 @@ def parse_args():
         choices=["single", "block", "noise_patch"],
         help="Type of perturbation to apply (default: block)",
     )
+    p.add_argument(
+        "--include_static",
+        action="store_true",
+        help="Also include sparse-static (period-1) alive states in perturbation sample",
+    )
     return p.parse_args()
 
 
@@ -112,19 +117,33 @@ def main():
 
     # ── Step 2: Subsample alive configurations ────────────────────────
     pert_sample = []
-    density_counts = Counter()
-    max_per_density = 5
+    dynamic_counts = Counter()
+    static_counts = Counter()
+    max_dynamic_per_density = 5
+    max_static_per_density = 2 if args.include_static else 0
+    n_static_included = 0
     for r in results:
         d = r["density_init"]
-        if r["sim"]["final"].sum() == 0:
+        sim = r["sim"]
+        if sim["final"].sum() == 0:
             continue
-        if density_counts[d] < max_per_density:
-            density_counts[d] += 1
+        is_static_alive = int(sim.get("period", 0)) == 1
+
+        if (not is_static_alive) and dynamic_counts[d] < max_dynamic_per_density:
+            dynamic_counts[d] += 1
+            pert_sample.append(r)
+        elif is_static_alive and static_counts[d] < max_static_per_density:
+            static_counts[d] += 1
+            n_static_included += 1
             pert_sample.append(r)
 
     n_alive = len(pert_sample)
     n_dead = sum(1 for r in results if r["sim"]["final"].sum() == 0)
-    print(f"\n  Subsampled {n_alive} alive configs (skipped {n_dead} extinct)\n")
+    print(
+        f"\n  Subsampled {n_alive} alive configs "
+        f"(dynamic={n_alive - n_static_included}, static={n_static_included}; "
+        f"skipped {n_dead} extinct)\n"
+    )
 
     # ── Step 3: Perturbation sweep ────────────────────────────────────
     t0 = time.time()

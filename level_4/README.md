@@ -112,6 +112,8 @@ Both transitions are **nucleation-controlled**: survival depends on whether a vi
 
 ![Survival probability showing transitions that shift with L](figures/survival_probability.png)
 
+> **Correction (from Level 5):** Level 4 initially suggested possible scale-free behaviour from $\xi/L \approx \mathrm{const}$ on $L=32$-$256$. Extended runs to $L=1024$ in Level 5 showed $\xi/L$ decreases monotonically with system size and $\xi \sim L^{0.86}$. The SOC interpretation is therefore not supported; the active phase has a finite intrinsic correlation length that grows sub-linearly with $L$.
+
 ### Steady-State Density
 
 In the active phase, the final density is approximately **independent of system size**: $\rho_\text{final} \approx 0.04\text{--}0.06$ for all $L$. This universality of the steady-state density is a property of the GoL rule, not of the initial condition — the system self-organises to a characteristic density regardless of $\rho_0$ or $L$.

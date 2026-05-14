@@ -5,112 +5,196 @@
 Level 5 closes the two most important open questions left by Level 4:
 
 1. **Does ξ/L converge as L → ∞?**
-   Level 4 measured the spatial correlation length ξ at L = 32, 64, 128, 256 and
-   found ξ ∝ L approximately — suggestive of self-organised criticality (SOC) in
-   the active phase. But the ratio ξ/L was *still decreasing* at L = 256 (from
-   0.09 to 0.062), leaving open whether ξ/L converges to a constant (true SOC)
-   or slowly vanishes (finite intrinsic length scale). Level 5 extends to L = 512
-   (and optionally L = 1024) to settle this.
+   Level 4 measured the spatial correlation length ξ at L = 32–256 and found
+   ξ ≈ const × L — suggestive of self-organised criticality (SOC). But ξ/L was
+   still decreasing at L = 256. Level 5 extends to L = 1024 with 50 samples per
+   point to give a definitive answer.
 
 2. **What is the dynamic exponent z?**
-   Level 4 measured only spatial correlations. The full finite-size scaling (FSS)
-   picture requires the dynamic exponent z, which governs how *temporal*
-   correlations grow with system size: τ_c ~ L^z at the transition density. This
-   connects to the kinetics of the transition and distinguishes GoL from known
-   universality classes (DP has z ≈ 1.76 in 2D).
-
-## Physical Context
-
-In equilibrium statistical mechanics, the dynamic exponent z links spatial and
-temporal divergences at a critical point:
-
-$$\xi_t \sim \xi^z \implies \tau_c \sim \xi^z \sim L^z \quad \text{at } \rho_0 = \rho_c$$
-
-For a continuous (second-order) transition in the directed percolation (DP)
-universality class: z ≈ 1.76 (2D). For a first-order transition, no universal z
-exists in the same sense — τ_c behaviour reflects the nucleation timescale rather
-than critical slowing-down.
-
-Level 4 found that the GoL extinction transition is first-order (Binder cumulant
-shows deep minima, not crossings; γ/ν ≈ 0.28 ≪ DP prediction of 0.90). Level 5
-tests whether z is also inconsistent with DP, which would complete the evidence
-that GoL does not belong to the DP universality class.
+   Level 4 measured only spatial correlations. The full FSS picture requires
+   the dynamic exponent z from τ_c ~ L^z at ρ_c, which would place GoL in or
+   exclude it from standard universality classes (DP has z ≈ 1.76 in 2D).
 
 ## Method
 
-### 1. Extended Finite-Size Sweep
+### Simulation parameters (full run)
 
-Simulations are run across **5 system sizes** (L = 32, 64, 128, 256, 512) with the
-same density grid used in Level 4 (fine resolution near ρ_c ≈ 0.85):
+| Parameter             | Value                                          |
+| --------------------- | ---------------------------------------------- |
+| Grid sizes L          | 32, 64, 128, 256, 512, 1024                    |
+| Initial densities     | 21 values in [0.02, 0.94], fine near ρ₀ ~ 0.85 |
+| Samples per (L, ρ₀)   | 50                                              |
+| Steps                 | 500 (steady state from step 334)               |
+| Total simulations     | 6,300                                           |
+| Runtime               | ~7.4 hours                                      |
 
-| Parameter             | Default | Quick mode | Full mode |
-| --------------------- | ------- | ---------- | --------- |
-| Grid sizes L          | 32–512  | 32–128     | 32–1024   |
-| Initial densities     | 21 pts  | 8 pts      | 21 pts    |
-| Samples per (L, ρ₀)   | 30      | 15         | 50        |
-| Steps                 | 500     | 300        | 500       |
-| Total simulations     | 3,150   | 360        | 6,300     |
+### Temporal autocorrelation
 
-The sweep collects **all Level 4 observables** (ρ_final, activity, survival
-probability, Binder cumulant, susceptibility, spatial correlation length ξ) plus
-**temporal observables**:
-
-### 2. Temporal Autocorrelation
-
-For each simulation, the steady-state activity time series a(t) is saved. The
-**temporal autocorrelation function** is computed via FFT (Wiener-Khinchin theorem):
+For each simulation the steady-state activity time series a(t) is saved. The
+**temporal autocorrelation function** is computed via FFT (Wiener-Khinchin):
 
 $$C_t(\tau) = \frac{\langle \delta a(t)\,\delta a(t+\tau)\rangle}{\mathrm{Var}(a)}, \quad \delta a = a - \langle a\rangle$$
 
-Only lags τ = 0, …, T/2 are used (the reliable half of the circular ACF).
+The **temporal correlation time** τ_c is extracted by fitting C_t(τ) ~ exp(−τ/τ_c)
+on the positive-correlation tail.
 
-### 3. Temporal Correlation Time τ_c
+### ξ/L convergence and power-law exponent
 
-The correlation time is extracted by fitting an exponential decay to the
-positive-correlation tail of C_t(τ):
+For active-phase densities (ρ₀ ≤ 0.80), ξ/L is tabulated for each L and a
+power-law fit ξ ~ L^α is performed across all six system sizes. α = 1.0 would
+confirm true SOC; α < 1.0 indicates sub-linear growth and a finite intrinsic
+length scale.
 
-$$C_t(\tau) \approx \exp(-\tau / \tau_c)$$
+## Results (L = 32, 64, 128, 256, 512, 1024 — B3/S23 — 50 samples)
 
-A log-linear least-squares fit is used. Runs where C_t falls below zero before a
-reliable fit can be made return τ_c = 0.
+### The Active Phase is NOT Scale-Free
 
-### 4. Dynamic Exponent z
+The key SOC diagnostic — ξ/L — is **monotonically decreasing** across all six
+system sizes:
 
-At the transition density ρ_c, the ensemble-averaged τ_c(L) is fit in log-log
-space to extract z:
+| L    | mean(ξ/L)  | ξ (abs.)  |
+| ---- | ---------- | --------- |
+| 32   | 0.0792     | ~2.5      |
+| 64   | 0.0723     | ~4.6      |
+| 128  | 0.0686     | ~8.8      |
+| 256  | 0.0614     | ~15.7     |
+| 512  | 0.0558     | ~28.6     |
+| 1024 | 0.0490     | ~50.2     |
 
-$$\tau_c(\rho_c, L) \sim L^z$$
+A power-law fit gives **ξ ~ L^0.86** — sub-linear, not ξ ∝ L. This definitively
+rules out the SOC interpretation proposed in Level 4. The apparent ξ ∝ L at
+small L was a finite-size artefact. The active phase has a finite intrinsic
+correlation length set by the characteristic size of GoL structures (gliders,
+oscillators), which grows slowly with L as larger grids can sustain larger
+transient structures.
 
-This is compared to:
-- **2D Directed Percolation**: z = 1.76
-- **First-order** (nucleation-controlled): z expected to be anomalous or undefined
+![ξ vs L power-law fit, slope ≈ 0.86 < 1](figures/xi_L_ratio_loglog.png)
 
-### 5. ξ/L Convergence
+![ξ/L vs ρ₀ for each L — monotonically decreasing](figures/xi_over_L.png)
 
-For active-phase densities (ρ₀ ≤ 0.80), the ratio ξ/L is tabulated for each L.
-Convergence to a constant → SOC. Decay toward zero → finite intrinsic ξ.
+### Dynamic Exponent z ≈ 0: No Critical Slowing-Down
 
-### 6. Data Collapse
+At the transition density ρ_c, the temporal correlation time τ_c(L) does **not**
+grow monotonically with L:
 
-The scaling collapse tests whether ξ/L is a universal function of the scaled
-variable (ρ₀ − ρ_c)·L^(1/ν):
+| L    | τ_c at ρ_c (steps) |
+| ---- | ------------------- |
+| 32   | 14.6                |
+| 64   | 22.4                |
+| 128  | 24.0                |
+| 512  | 18.6                |
+| 1024 | 18.2                |
 
-$$\frac{\xi}{L} = \mathcal{F}\!\left[(ρ_0 - \rho_c) \cdot L^{1/\nu}\right]$$
+τ_c peaks near L = 128 and then levels off or slightly decreases. The log-log
+fit gives **z ≈ 0.02** — effectively zero. This is radically different from the
+DP prediction z = 1.76 and from any standard critical universality class. There
+is **no critical slowing-down** at the extinction transition.
 
-A clean collapse would indicate the existence of a universal scaling function near
-ρ_c. For a first-order transition, the collapse is expected to be imperfect.
+This is physically expected for a first-order (nucleation-controlled) transition:
+the timescale for extinction is set by the nucleation rate of the overcrowded
+initial condition, which is a local process independent of system size at large L.
+
+![τ_c vs L log-log — z ≈ 0, no divergence](figures/dynamic_exponent.png)
+
+![τ_c vs ρ₀ for each L](figures/correlation_time.png)
+
+### Temporal Autocorrelation Structure
+
+The autocorrelation function C_t(τ) in the active phase decays on a timescale
+of 15–25 steps, independent of L, consistent with the characteristic period-2
+oscillations and glider transit times in GoL. In the high-density regime near
+ρ_c, C_t(τ) decays more rapidly because the system is close to extinction.
+
+![C_t(τ) at several densities for L = 1024](figures/temporal_autocorr.png)
+
+### Survival Probability and Transition Location
+
+The survival probability P_s = 0.5 shifts strongly with system size:
+
+| L    | ρ₀ at P_s = 0.5 |
+| ---- | --------------- |
+| 32   | ~0.777          |
+| 64   | ~0.830          |
+| 128  | ~0.861          |
+| 512  | ~0.909          |
+| 1024 | ~0.925          |
+
+This L-dependent transition is nucleation-controlled: the probability of finding
+a sufficiently sparse seed region for sustained activity grows with L, pushing
+the effective critical density toward 1 in the thermodynamic limit. The active
+phase **expands to fill the entire interval (0, 1)** as L → ∞.
+
+### Susceptibility: No Divergence
+
+The susceptibility peak γ/ν ≈ 0.00 confirms that fluctuations do **not** diverge
+at the transition. This is the hallmark of a first-order transition, where the
+susceptibility peak height is bounded by the latent heat, not by a diverging
+correlation length.
+
+![Susceptibility and Binder cumulant](figures/data_collapse.png)
+
+### Data Collapse: No Universal Scaling Function
+
+The scaled collapse ξ/L vs (ρ₀ − ρ_c)·L^(1/ν) shows **no clean collapse** for
+any value of ν. This is consistent with a first-order transition, which does
+not possess a universal scaling function in the RG sense.
+
+## Key Physics Findings
+
+### 1. The Active Phase Has a Finite (Sub-Linear) Intrinsic Correlation Length
+
+ξ ~ L^0.86 in the active phase means there is a characteristic length scale in
+GoL that grows with system size, but more slowly than L. This length scale is
+set by the typical cluster size of active patterns (gliders, oscillators, larger
+transient structures), which is limited by the collision probability that scales
+with density and L. Level 4's apparent ξ ∝ L was a finite-size artefact
+restricted to small L.
+
+**Physical interpretation**: GoL is not at a self-organised critical state.
+The active phase resembles a **turbulent steady state** — spatially structured
+on all accessible scales, but with a finite coherence length that saturates in
+the true thermodynamic limit.
+
+### 2. No Critical Slowing-Down (z ≈ 0)
+
+The temporal correlation time τ_c ~ L^0.02 ≈ const. The transition is
+**abrupt and nucleation-controlled**, not preceded by critical slowing-down. A
+continuous (critical) transition would show τ_c diverging as z ≈ 1.76 (DP).
+
+### 3. Consistent First-Order Picture Across All Observables
+
+All five observables now point to the same conclusion:
+
+| Observable          | Measured         | DP (continuous) | First-order |
+| ------------------- | ---------------- | --------------- | ----------- |
+| Binder cumulant     | Deep minima      | Clean crossings | Deep minima |
+| γ/ν                 | ≈ 0.00           | 0.90            | 2.0 (or 0)  |
+| β/ν                 | ≈ 0.00           | 0.80            | 0 (finite m)|
+| z (dynamic exp.)    | ≈ 0.02           | 1.76            | undefined   |
+| ξ scaling α         | ≈ 0.86           | 1.0 (at ρ_c)   | < 1         |
+
+The GoL extinction transition is definitively **first-order, nucleation-
+controlled, and outside all standard universality classes**.
+
+### 4. Correction to Level 4's SOC Claim
+
+Level 4 reported "the active phase is intrinsically scale-free" based on
+ξ/L ~ const at L = 32–256. The Level 5 data with L up to 1024 refutes this:
+ξ/L is monotonically decreasing and ξ ~ L^0.86 ≠ L^1. The claim must be
+revised: the active phase of GoL has **sub-linear spatial correlations**, not
+scale-free ones.
 
 ## Figures
 
-| Figure                  | Description                                                            |
-| ----------------------- | ---------------------------------------------------------------------- |
-| `xi_over_L.png`         | ξ/L vs ρ₀ for each L — SOC convergence test (key result)              |
-| `temporal_autocorr.png` | C_t(τ) at several ρ₀ values for the largest L, on semi-log scale      |
-| `correlation_time.png`  | τ_c vs ρ₀ for each L with error bars                                  |
-| `dynamic_exponent.png`  | log-log τ_c(ρ_c) vs L with z fit and DP reference (z = 1.76)         |
-| `data_collapse.png`     | ξ/L vs (ρ₀ − ρ_c)·L^(1/ν), all L overlaid — tests scaling hypothesis |
-| `xi_L_ratio_loglog.png` | log-log ξ vs L at active-phase densities; slope = 1 would confirm SOC |
-| `summary_panel.png/pdf` | Publication-quality 2×3 panel                                          |
+| Figure                  | Description                                                                |
+| ----------------------- | -------------------------------------------------------------------------- |
+| `xi_over_L.png`         | ξ/L vs ρ₀ for each L — monotonically decreasing, rules out SOC            |
+| `xi_L_ratio_loglog.png` | log-log ξ vs L with fitted slope α ≈ 0.86 and slope=1 reference           |
+| `temporal_autocorr.png` | C_t(τ) at several ρ₀ for L = 1024; τ_c ~ 15–25 steps, L-independent      |
+| `correlation_time.png`  | τ_c vs ρ₀ for each L; peaks near ρ₀ ~ 0.70–0.80, L-independent amplitude  |
+| `dynamic_exponent.png`  | log-log τ_c(ρ_c) vs L; z ≈ 0.02 ≪ DP prediction 1.76                     |
+| `data_collapse.png`     | ξ/L vs (ρ₀ − ρ_c)·L^(1/ν) — no clean collapse, consistent with 1st-order  |
+| `summary_panel.png/pdf` | Publication-quality 2×3 panel                                              |
 
 ## Usage
 
@@ -121,56 +205,12 @@ python level_5/run.py
 # Quick test (L = 32, 64, 128; 15 samples; 300 steps — ~5 min)
 python level_5/run.py --quick
 
-# Full run (adds L = 1024; 50 samples — compute-intensive)
+# Full run as used for paper results (L = 32–1024; 50 samples — ~7.5 hours)
 python level_5/run.py --full
 
-# Override critical parameters from Level 4
+# Override critical density from Level 4 Binder analysis
 python level_5/run.py --rho_c 0.87 --nu 0.5
-
-# Specify grid sizes manually
-python level_5/run.py --grid_sizes 64 128 256 512 1024
 ```
-
-## Expected Results
-
-### ξ/L Convergence
-
-| Outcome | Interpretation |
-| ------- | -------------- |
-| ξ/L → constant (L: 32→512) | True SOC: active phase is intrinsically scale-free |
-| ξ/L → 0 slowly | Finite intrinsic ξ; the "SOC" appearance is a finite-size artefact |
-| ξ/L non-monotone | Complex behaviour; ξ may depend on whether ρ₀ is above/below some crossover |
-
-### Dynamic Exponent z
-
-| Outcome | Interpretation |
-| ------- | -------------- |
-| z ≈ 1.76 | Consistent with DP universality (would conflict with first-order finding) |
-| z ≫ 1.76 or z ≈ 0 | Non-standard dynamics; nucleation-controlled, not critical slowing-down |
-| z not determined | τ_c too small or constant relative to L — transition is abrupt, not critical |
-
-### Data Collapse Quality
-
-| Outcome | Interpretation |
-| ------- | -------------- |
-| Clean collapse | Consistent with a continuous transition with exponent ν |
-| Poor collapse | First-order transition (expected, consistent with Level 4) |
-
-## Key Physics Summary
-
-Level 5, combined with Level 4, completes the finite-size scaling picture:
-
-- **Spatial FSS** (Level 4): first-order Binder cumulant, ξ ∝ L in active phase, γ/ν ≈ 0.28
-- **Temporal FSS** (Level 5): dynamic exponent z, temporal correlation time τ_c(L), ξ/L convergence
-
-Together these establish whether the GoL active phase is:
-
-1. A **SOC state** (ξ/L converges, z well-defined but ≠ DP)
-2. A **large-but-finite correlated state** (ξ/L → 0, z undefined or 0)
-3. Or something more exotic
-
-This distinction is the final empirical ingredient needed before the theoretical
-framework of Level 6 can be written.
 
 ## Connection to the Project Arc
 
@@ -178,8 +218,8 @@ framework of Level 6 can be written.
 Level 1  Phase discovery (UMAP + HDBSCAN)
 Level 2  Chaos confirmation (positive Lyapunov exponent)
 Level 3  Rule-space generalisation (Wolfram classes)
-Level 4  Spatial FSS — first-order extinction, xi ~ L
-Level 5  Temporal FSS — z exponent, xi/L convergence      ← YOU ARE HERE
-Level 6  Rule-space FSS comparison (other CAs)
+Level 4  Spatial FSS — first-order extinction, apparent xi ~ L
+Level 5  Temporal FSS — z ≈ 0, xi ~ L^0.86 ≠ L, corrects Level 4 SOC claim
+Level 6  Rule-space FSS comparison (other CAs)              ← NEXT
 Level 7  Mean-field theoretical framework
 ```

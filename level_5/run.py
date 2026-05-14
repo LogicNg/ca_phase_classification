@@ -263,10 +263,12 @@ def plot_data_collapse(x_all, y_all, L_labels, grid_sizes, rho_c, nu, fig_dir):
     plt.close(fig)
 
 
-def plot_xi_loglog(results, grid_sizes, densities, active_rho_max, fig_dir):
+def plot_xi_loglog(results, grid_sizes, densities, active_rho_max, fig_dir,
+                   alpha_xi=None):
     """
     log-log ξ vs L at selected active-phase densities.
-    Slope = 1 on this plot would confirm ξ ∝ L (SOC / scale-free).
+    Slope = 1 confirms ξ ∝ L (SOC); slope < 1 indicates sub-linear growth
+    with a finite intrinsic length scale.
     """
     ensure_dir(fig_dir)
     targets = [0.10, 0.30, 0.50, 0.70]
@@ -275,6 +277,8 @@ def plot_xi_loglog(results, grid_sizes, densities, active_rho_max, fig_dir):
     fig, ax = plt.subplots(figsize=(7, 5))
     cmap = plt.colormaps.get_cmap("viridis").resampled(len(targets))
 
+    # Collect all (L, xi) pairs across active-phase densities to fit α
+    all_L, all_xi = [], []
     for i, t in enumerate(targets):
         idx = int(np.argmin(np.abs(rhos_ref - t)))
         rho0 = rhos_ref[idx]
@@ -288,6 +292,8 @@ def plot_xi_loglog(results, grid_sizes, densities, active_rho_max, fig_dir):
                 if xi > 0:
                     L_vals.append(L)
                     xi_vals.append(xi)
+                    all_L.append(L)
+                    all_xi.append(xi)
         if len(L_vals) >= 2:
             L_arr = np.array(L_vals, dtype=float)
             xi_arr = np.array(xi_vals)
@@ -295,9 +301,19 @@ def plot_xi_loglog(results, grid_sizes, densities, active_rho_max, fig_dir):
                       ms=6, lw=1.4, color=cmap(i),
                       label=rf"$\rho_0={rho0:.2f}$", alpha=0.85)
 
-    # Reference slope = 1 line
+    # Reference lines
     L_range = np.array([min(grid_sizes), max(grid_sizes)], dtype=float)
-    ax.loglog(L_range, 0.08 * L_range, "k--", lw=1, alpha=0.5, label=r"Slope = 1 ($\xi\propto L$)")
+    ax.loglog(L_range, 0.08 * L_range, "k--", lw=1, alpha=0.5,
+              label=r"Slope = 1 ($\xi\propto L$, SOC)")
+
+    # Fitted slope
+    if alpha_xi is not None and not np.isnan(alpha_xi) and len(all_L) >= 3:
+        all_L_arr = np.array(all_L, dtype=float)
+        all_xi_arr = np.array(all_xi)
+        intercept = np.mean(np.log(all_xi_arr) - alpha_xi * np.log(all_L_arr))
+        ax.loglog(L_range, np.exp(intercept) * L_range**alpha_xi,
+                  "r-.", lw=1.5, alpha=0.7,
+                  label=rf"Fit: slope $\approx {alpha_xi:.2f}$")
 
     ax.set_xlabel(r"System size $L$")
     ax.set_ylabel(r"Correlation length $\xi$")
@@ -494,9 +510,13 @@ def main():
     print(f"\n  Sweep complete in {t_sweep:.1f}s\n")
 
     # ── 2. Critical point from Binder cumulant crossings ─────────────
-    print("  Estimating rho_c from Binder cumulant crossings ...")
+    # Restrict to the high-density extinction region (rho_0 > 0.60) to avoid
+    # spurious crossings at low density caused by noise in the Binder cumulant
+    # near the low-density boundary where survival rates vary strongly.
+    print("  Estimating rho_c from Binder cumulant crossings (rho_0 > 0.60) ...")
+    densities_high = densities[densities > 0.60]
     rho_c_est, crossings = find_binder_crossings(
-        results, grid_sizes, densities, "binder_rho"
+        results, grid_sizes, densities_high, "binder_rho"
     )
     if crossings:
         print(f"    Crossings: {[f'{x:.4f}' for x in crossings]}")
@@ -504,16 +524,42 @@ def main():
         rho_c = rho_c_est
     else:
         rho_c = args.rho_c
-        print(f"    No crossings found; using --rho_c = {rho_c:.4f}")
+        print(f"    No crossings in high-density region; using --rho_c = {rho_c:.4f}")
 
-    # ── 3. ξ/L convergence table ──────────────────────────────────────
+    # ── 3. ξ/L convergence table + power-law exponent α ──────────────
     print("\n  xi/L convergence table (active phase, rho_0 <= 0.80):")
     xi_table = xi_over_L_table(results, grid_sizes, densities, active_rho_max=0.80)
-    for L in grid_sizes:
-        xi_L_vals = xi_table[L]["xi_over_L"]
-        xi_L_mean = float(np.mean(xi_L_vals[xi_L_vals > 0])) if xi_L_vals.any() else 0.0
-        print(f"    L={L:5d}:  mean(xi/L) = {xi_L_mean:.4f}")
+    L_sorted = np.array(sorted(grid_sizes), dtype=float)
+    xi_L_means = np.array([
+        float(np.mean(xi_table[L]["xi_over_L"][xi_table[L]["xi_over_L"] > 0]))
+        if xi_table[L]["xi_over_L"].any() else 0.0
+        for L in sorted(grid_sizes)
+    ])
+    for L, xL in zip(sorted(grid_sizes), xi_L_means):
+        print(f"    L={L:5d}:  mean(xi/L) = {xL:.4f}  (xi ~ {xL * L:.1f})")
     print("    [If xi/L converges -> SOC; if xi/L -> 0 -> finite intrinsic xi]")
+
+    # Fit xi ~ L^alpha to determine the scaling exponent
+    xi_abs = xi_L_means * L_sorted           # xi values (not xi/L)
+    mask_xi = xi_abs > 0
+    if mask_xi.sum() >= 3:
+        alpha_xi, _ = np.polyfit(np.log(L_sorted[mask_xi]), np.log(xi_abs[mask_xi]), 1)
+        print(f"    Power-law fit:  xi ~ L^{alpha_xi:.3f}  "
+              f"(alpha=1.0 -> SOC; alpha<1 -> sub-linear, finite intrinsic xi)")
+    else:
+        alpha_xi = float("nan")
+        print("    Power-law fit:  insufficient data")
+
+    # Monotonicity test: compare the slope of xi/L means vs log(L)
+    # (more robust than comparing just the last two values)
+    mask_trend = xi_L_means > 0
+    if mask_trend.sum() >= 3:
+        trend_slope, _ = np.polyfit(
+            np.log(L_sorted[mask_trend]), xi_L_means[mask_trend], 1
+        )
+        xi_L_is_decreasing = trend_slope < -1e-4
+    else:
+        xi_L_is_decreasing = False
 
     # ── 4. Dynamic exponent z ─────────────────────────────────────────
     print(f"\n  Estimating dynamic exponent z (tau_c ~ L^z at rho_0 ~ {rho_c:.3f}) ...")
@@ -626,7 +672,8 @@ def main():
     plot_correlation_time(results, grid_sizes, fig_dir)
     plot_dynamic_exponent(L_arr_full, tau_at_rhoc, z, z_intercept, rho_c, fig_dir)
     plot_data_collapse(x_all, y_all, L_labels, grid_sizes, rho_c, args.nu, fig_dir)
-    plot_xi_loglog(results, grid_sizes, densities, active_rho_max=0.80, fig_dir=fig_dir)
+    plot_xi_loglog(results, grid_sizes, densities, active_rho_max=0.80,
+                   fig_dir=fig_dir, alpha_xi=alpha_xi)
     plot_summary_panel(
         results, grid_sizes, densities, rho_c, z,
         L_chi, chi_max_arr, gamma_over_nu, fig_dir,
@@ -635,23 +682,27 @@ def main():
     print(f"  Figures saved → {fig_dir}/\n")
 
     # ── 11. Concluding summary ────────────────────────────────────────
-    xi_L_trend = "converging" if (
-        len(grid_sizes) >= 3 and
-        xi_table[grid_sizes[-1]]["xi_over_L"].mean()
-        > 0.8 * xi_table[grid_sizes[-2]]["xi_over_L"].mean()
-    ) else "decreasing"
-    soc_verdict = (
-        "consistent with SOC (scale-free active phase)"
-        if xi_L_trend == "converging"
-        else "ξ/L still decreasing — finite intrinsic length scale or SOC onset not yet reached"
-    )
+    # Proper convergence verdict: use the monotonicity test over all L
+    if xi_L_is_decreasing:
+        xi_L_trend = "decreasing"
+        soc_verdict = (
+            f"ξ/L monotonically decreasing (xi ~ L^{alpha_xi:.2f}); "
+            "finite intrinsic correlation length — NOT SOC"
+        )
+    else:
+        xi_L_trend = "converging"
+        soc_verdict = (
+            f"ξ/L approximately constant (xi ~ L^{alpha_xi:.2f}); "
+            "consistent with SOC (scale-free active phase)"
+        )
 
     print(f"{'='*70}")
     print(f" Done!  Level 5 results:")
     print(f"   System sizes:   {grid_sizes}")
     print(f"   rho_c:          {rho_c:.4f}")
+    print(f"   xi scaling:     xi ~ L^{alpha_xi:.3f}  (1.0 -> SOC, <1 -> sub-linear)")
     print(f"   Dynamic exp z:  {z:.3f}  (DP: {DP_DYNAMIC_EXPONENT_2D:.3f})"
-          if not np.isnan(z) else f"   Dynamic exp z:  not determined")
+          if not np.isnan(z) else f"   Dynamic exp z:  not determined (tau_c non-monotone)")
     print(f"   gamma/nu:       {gamma_over_nu:.3f}  (DP: {DP_EXPONENTS_2D['gamma_over_nu']:.3f})")
     print(f"   xi/L trend:     {xi_L_trend}  -> {soc_verdict}")
     print(f"   Data:           {out_dir}/temporal_fss.npz")

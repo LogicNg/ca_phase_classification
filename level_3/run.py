@@ -477,9 +477,9 @@ def main():
     print(f" Level 3: Rule-Space Phase Classification")
     print(f"{'='*60}")
     print(f" Rules:        {args.n_rules}  ({args.sampling} sampling)")
-    print(f" Grid:         {args.grid_size} × {args.grid_size}")
+    print(f" Grid:         {args.grid_size} x {args.grid_size}")
     print(f" Steps:        {args.n_steps}")
-    print(f" Samples/rule: {args.n_samples} × 3 densities = {args.n_samples * 3}")
+    print(f" Samples/rule: {args.n_samples} x 3 densities = {args.n_samples * 3}")
     print(f" Total sims:   {args.n_rules * args.n_samples * 3}")
     print(f"{'='*60}\n")
 
@@ -515,7 +515,7 @@ def main():
         rule_strings=[r["rule_str"] for r in rule_info],
         lambdas=[r["lambda"] for r in rule_info],
     )
-    print(f"  Saved → {out_dir}/rule_features.npz")
+    print(f"  Saved -> {out_dir}/rule_features.npz")
 
     # ── 3. Cluster the rule space ─────────────────────────────────────
     print("\n  Clustering rule space ...")
@@ -560,7 +560,7 @@ def main():
         f"  k-means best k = {best_k}  "
         f"(silhouette = {max(km['silhouette_scores']):.3f})"
     )
-    print(f"  → Using {method_used}\n")
+    print(f"  -> Using {method_used}\n")
 
     # ── 4. Interpretation ─────────────────────────────────────────────
     lambdas_arr = np.array([r["lambda"] for r in rule_info])
@@ -568,9 +568,9 @@ def main():
     meta_feats = set(exclude)
     imp_phys = imp_df[~imp_df["feature"].isin(meta_feats)].reset_index(drop=True)
 
-    print("  Top-5 discriminating features (η²):")
+    print("  Top-5 discriminating features (eta^2):")
     for _, row in imp_phys.head(5).iterrows():
-        print(f"    {row['feature']:30s}  η² = {row['eta_squared']:.3f}")
+        print(f"    {row['feature']:30s}  eta^2 = {row['eta_squared']:.3f}")
 
     unique_classes = sorted([l for l in set(labels) if l >= 0])
     print(f"\n  Rule class summary:")
@@ -590,7 +590,7 @@ def main():
                 val = feat_matrix[mask, feat_names.index(fname)].mean()
                 sigs.append(f"{fname}={val:.3f}")
         reps = [rule_info[idx]["rule_str"] for idx in np.where(mask)[0][:3]]
-        print(f"    Class {lab}  (n={n}, λ = {lam_mean:.3f} ± {lam_std:.3f})")
+        print(f"    Class {lab}  (n={n}, lambda = {lam_mean:.3f} +/- {lam_std:.3f})")
         print(f"      Features: {', '.join(sigs)}")
         print(f"      Examples: {', '.join(reps)}")
 
@@ -649,19 +649,19 @@ def main():
         fig_dir=fig_dir,
     )
 
-    print(f"  Figures saved → {fig_dir}/\n")
+    print(f"  Figures saved -> {fig_dir}/\n")
 
     n_classes = len(unique_classes)
     print(f"{'='*60}")
     print(f" Done!  Level 3 results:")
-    print(f"   • {len(rules)} rules characterised  ({method_used})")
-    print(f"   • {n_classes} dynamical classes found (+ {n_extinct} extinct)")
+    print(f"   - {len(rules)} rules characterised  ({method_used})")
+    print(f"   - {n_classes} dynamical classes found (+ {n_extinct} extinct)")
     print(
-        f"   • Wolfram regimes: "
+        f"   - Wolfram regimes: "
         f"{', '.join(regime_names[r] for r in sorted(set(regime_labels)) if r >= 0)}"
     )
-    print(f"   • Feature matrix: {out_dir}/rule_features.npz")
-    print(f"   • Figures: {fig_dir}/")
+    print(f"   - Feature matrix: {out_dir}/rule_features.npz")
+    print(f"   - Figures: {fig_dir}/")
     print(f"{'='*60}\n")
 
 
